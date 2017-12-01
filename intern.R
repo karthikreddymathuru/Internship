@@ -76,6 +76,7 @@ sum(is.na(diabetes))
 # individual attribute missing values
 
 colSums(is.na(diabetes)) 
+
 # race - 2273 , gender - 3,payer_code - 40256 , medical_speciality - 49949,
 # diag_1 - 21, diag_2 - 358, diag_3 - 1423
 
@@ -111,9 +112,11 @@ summary(diabetes_ctgr_attr$admission_type_id)
 
 # COrrelation plot
 library(corrplot)
-
+par(mfrow = c(1,1))
 corrplot(cor(diabetes_Num_attr),method = 'number',diag = F)
 
+dev.copy(jpeg,filename = 'correlation_plot.jpg')
+dev.off()
 # Class Imbalance
 
 summary(diabetes$diabetesMed)
@@ -475,5 +478,41 @@ dev.copy(jpeg,"glucose&A1c-Diabeticmed.jpg")
 dev.off()
 
 
+imputed_rm = imputed
+
+View(imputed_rm)
+
+# AS race and medical_speciality has more than 50% of missing values just removed them.
+imputed$race = NULL
+imputed$medical_specialty = NULL
+View(imputed)
 
 
+# Train test and validation split (60%,20%,20%)
+library(caret)
+
+tr = createDataPartition(imputed$diabetesMed, p = 0.8 , list =F)
+
+tval = imputed[tr,]
+test = imputed[-tr,]
+
+trs = createDataPartition(tval$diabetesMed, p = 0.8 , list = F)
+
+train = tval[trs,]
+val = tval[-trs,]
+
+dim(train)
+dim(test)
+dim(val)
+
+test$diabetesMed = NULL # test should not have class label
+
+
+### Model Building ###
+
+#Logistic model 
+
+log_model = glm(train$diabetesMed~.,family = 'binomial',data = train)
+
+
+memory.limit( size = 4000)
